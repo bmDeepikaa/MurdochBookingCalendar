@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendee Form</title>
+    <link rel="stylesheet" href="login.css">
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5 " style="width: 530px;">
+        <div class="justify-content-center">
+            <div class="card card-login mx-auto  bg-dark" style="color: beige;">
+                <div class="card-body">
+                    <h2 class="card-title text-center">Attendee Form</h2>
+                    <form id="attendanceForm" method="POST">
+                        <div class="form-group">
+                            <label for="attendeeNo">Attendee Number:</label>
+                            <input type="text" class="form-control" id="attendeeNo" placeholder="Enter attendee number" readonly>
+                        </div>
+
+                        <p>The allocated slot for you will be:</p>
+                        <ul class="list-unstyled">
+                            <li>Date: <span id="date"></span></li>
+                            <li>Time: <span id="time"></span></li>
+                            <li>Venue: <span id="venue"></span></li>
+                        </ul>
+
+                        <div class="form-group">
+                            <p>Can you make it?</p>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="attendance" id="yes" value="Accepted">
+                                <label class="form-check-label" for="yes">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="attendance" id="no" value="Declined">
+                                <label class="form-check-label" for="no">No</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="Remark">If not, why?</label>
+                            <textarea class="form-control" id="remark" name="remark" rows="3"></textarea>
+                        </div>
+                        <input type="hidden" id="meetingID" name="meetingID">
+                        <button type="submit" class="btn btn-primary" action="??">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const meetingID = urlParams.get('meetingID');
+
+        if (meetingID) {
+            document.getElementById('meetingID').value = meetingID;
+
+            fetch(`getMeetingDetails.php?meetingID=${meetingID}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('attendeeNo').value = data.attendeeNo;
+                    document.getElementById('date').innerText = data.date;
+                    document.getElementById('time').innerText = data.time;
+                    document.getElementById('venue').innerText = data.venue;
+                })
+                .catch(error => console.error('Error fetching meeting details:', error));
+        }
+
+        $('#attendanceForm').on('submit', function (event) {
+            event.preventDefault();
+
+            var attendanceId = $("input[name='attendance']:checked").attr('id');
+            var remarks = $('#remark').val().trim();
+
+            // Validation: If "No" is selected, remarks must be entered
+            if (attendanceId === 'no' && remarks === '') {
+                alert('Please enter remarks explaining why you cannot make it.');
+                return; // Prevent form submission
+            }
+
+            var formData = new FormData(this);
+
+            $.ajax({
+                url: 'updateAttendance.php',
+                type: 'POST',
+                data: formData,
+                processData: false,  // Prevent jQuery from processing the data
+                contentType: false,  // Prevent jQuery from setting content type
+                success: function (response) {
+                    alert('Response submitted.');
+                    // Reset attendance and remarks fields only
+                    $("input[name='attendance']").prop("checked", false); // Uncheck all radio buttons
+                    $("#remark").val(""); // Clear remarks textarea
+                },
+                error: function (xhr, status, error) {
+                    alert('An error occurred while sending response: ' + xhr.responseText);
+                }
+            });
+        });
+
+
+    });
+    </script>
+
+    <!-- Bootstrap JS and dependencies (optional) -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</body>
+</html>
+
+<!-- text area and validate against db
+<h1>student number</h1>
+text retrieve either from db based onstudent number or from email link
+<h1>the available and allocated slot for you: </h1>
+<br>
+<h1>Date: 17 June 2024 </h1>
+<h1>Time: 13:00</h1>
+<h1>Venue: Wilkie edge , classroom 234</h1>
+radio button
+<h1>can you make it?</h1>
+if user inserts no pop up the next question
+<h1>why can you not make it</h1> -->
